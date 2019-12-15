@@ -9,6 +9,8 @@ public class VendingMachineImpl implements VendingMachine {
     private Inventory<Item> itemInventory = new Inventory<Item>();
     private int currentCustomerBalance = 0;
     private List<Coin> currentCustomerCoinList = new ArrayList<>();
+    private Item lastItemBought;
+    private int lastChangeReturned;
     public Scanner scanner = new Scanner(System.in);
 
     public VendingMachineImpl() {
@@ -30,6 +32,14 @@ public class VendingMachineImpl implements VendingMachine {
         this.itemInventory = itemInventory;
     }
 
+    public Item getLastItemBought() {
+        return lastItemBought;
+    }
+
+    public int getLastChangeReturned() {
+        return lastChangeReturned;
+    }
+
     @Override
     public void startVendingMachine() {
         executeVendingMachineState(VendingMachineState.DEFAULT_STATE);
@@ -39,9 +49,15 @@ public class VendingMachineImpl implements VendingMachine {
         state.execute(this);
     }
 
+    public String getInput() {
+        String input = scanner.nextLine();
+        System.out.println("INPUT GIVEN:-"+input);
+        return input;
+    }
+
     private VendingMachineState getCommandStateFromInput() {
         VendingMachineState state = null;
-        String input = scanner.nextLine();
+        String input = getInput();
         if (input.equals("0")) {
             state = VendingMachineState.DEFAULT_STATE;
         } else if (input.equals("1")) {
@@ -52,6 +68,8 @@ public class VendingMachineImpl implements VendingMachine {
             state = VendingMachineState.PURCHASE_ITEM_STATE;
         } else if (input.equals("4")) {
             state = VendingMachineState.RETURN_COINS_STATE;
+        } else if (input.equals("X")) {
+            state = VendingMachineState.STOP;
         } else {
             System.out.println("Wrong command");
             state = VendingMachineState.DEFAULT_STATE;
@@ -60,15 +78,17 @@ public class VendingMachineImpl implements VendingMachine {
     }
 
     public void defaultCommandState() {
-        System.out.println("What you want to do?");
+        System.out.println("Q. What you want to do?");
         System.out.println("Enter Command as below");
-        System.out.println("Enter <1> to Insert Coin");
-        System.out.println("Enter <2> to Check Items");
+        System.out.println("\t=============================================================");
+        System.out.println("\t|\tEnter <1> to Insert Coin");
+        System.out.println("\t|\tEnter <2> to Check Items");
         if (currentCustomerBalance > 0) {
-            System.out.println("Enter <3> to Purchase Items");
+            System.out.println("\t|\tEnter <3> to Purchase Items");
             System.out.println("Enter <4> to Return Coin");
         }
-
+        System.out.println("\t|\tEnter <X> to STOP");
+        System.out.println("\t=============================================================");
         executeVendingMachineState(getCommandStateFromInput());
     }
 
@@ -80,12 +100,14 @@ public class VendingMachineImpl implements VendingMachine {
 
     @Override
     public void insertCoins() {
-        System.out.println("Choose Coin you want to insert?");
-        System.out.println("Enter <1> or <10> to Insert 10 JPY");
-        System.out.println("Enter <2> or <50> to Insert 50 JPY");
-        System.out.println("Enter <3> or <100> to Insert 100 JPY");
-        System.out.println("Enter <4> or <500> to Insert 500 JPY");
-        String input = scanner.nextLine();
+        System.out.println("Q. Choose Coin you want to insert?");
+        System.out.println("\t=============================================================");
+        System.out.println("\t|\tEnter <1> or <10> to Insert 10 JPY");
+        System.out.println("\t|\tEnter <2> or <50> to Insert 50 JPY");
+        System.out.println("\t|\tEnter <3> or <100> to Insert 100 JPY");
+        System.out.println("\t|\tEnter <4> or <500> to Insert 500 JPY");
+        System.out.println("\t=============================================================");
+        String input = getInput();
         if (input.equals("1") || input.equals("10")) {
             updateCurrentCustomerCoinInventory(Coin.JPY_10);
         } else if (input.equals("2") || input.equals("50")) {
@@ -99,7 +121,7 @@ public class VendingMachineImpl implements VendingMachine {
             insertCoins();
             return;
         }
-        System.out.println("Great your current Balance is now " + currentCustomerBalance +" JPY");
+        System.out.println("Great your current Balance is now " + currentCustomerBalance + " JPY");
         executeVendingMachineState(VendingMachineState.DEFAULT_STATE);
     }
 
@@ -119,12 +141,24 @@ public class VendingMachineImpl implements VendingMachine {
         return changes;
     }
 
+    public boolean isInteger(String input) {
+        try {
+            Integer.parseInt(input);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     @Override
     public void purchaseAItem() {
         itemInventory.printItemInventory();
         if (currentCustomerBalance > 0) {
             System.out.println("Select the Items you want to purchase by entering itemId");
-            String input = scanner.nextLine();
+            String input = getInput();
+            if (!isInteger(input)) {
+                input = input.hashCode() + "";
+            }
             Item item = itemInventory.getInventoryByItemId(Integer.parseInt(input));
             if (item != null) {
                 if (itemInventory.hasItem(item)) {
@@ -144,6 +178,7 @@ public class VendingMachineImpl implements VendingMachine {
                         } else {
                             currentCustomerCoinList = changes;
                             currentCustomerBalance = changeAmount;
+                            lastItemBought = item;
                             System.out.println("Successfully purchased item (" + item.getItemName() + ") . Remaining balance is" + currentCustomerBalance);
                         }
                     }
@@ -159,11 +194,12 @@ public class VendingMachineImpl implements VendingMachine {
 
     @Override
     public List<Coin> returnChange() {
-        if(currentCustomerBalance>0) {
-            System.out.println("Please Collect your change amount "+currentCustomerBalance+ " JPY");
+        if (currentCustomerBalance > 0) {
+            lastChangeReturned = currentCustomerBalance;
+            System.out.println("Please Collect your change amount " + currentCustomerBalance + " JPY");
             Inventory<Coin> tempCoinInventory = new Inventory<>();// JUST for output
             List<Coin> tempCoins = currentCustomerCoinList;
-            for(Coin coin: currentCustomerCoinList){
+            for (Coin coin : currentCustomerCoinList) {
                 coinInventory.remove(coin);
                 tempCoinInventory.add(coin);
             }
@@ -176,5 +212,12 @@ public class VendingMachineImpl implements VendingMachine {
 
         }
         return null;
+    }
+
+    public void stop() {
+        if (currentCustomerBalance > 0) {
+            returnChange();
+        }
+        System.out.println("STOPPED");
     }
 }

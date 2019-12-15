@@ -16,7 +16,9 @@ public class Inventory<E> {
 
     public void add(E item) {
         inventory.put(item, getTotalCount(item) + 1);
-        itemIdMap.put(item.hashCode(), item);
+        if(item instanceof Item) {
+            itemIdMap.put(((Item) item).getItemId(), item);
+        }
     }
 
     public E getInventoryByItemId(int id){
@@ -25,7 +27,9 @@ public class Inventory<E> {
 
     public void putTotal(E item, int totalCount) {
         inventory.put(item, totalCount);
-        itemIdMap.put(item.hashCode(), item);
+        if(item instanceof Item) {
+            itemIdMap.put(((Item) item).getItemId(), item);
+        }
     }
 
     public void remove(E item) {
@@ -40,27 +44,31 @@ public class Inventory<E> {
     }
 
     public void printItemInventory(){
-        System.out.println("ItemId | Item Name  | Item Price | Item Count");
+        System.out.println("\t=============================================================");
+        System.out.println("\t|\tItemId | Item Name  | Item Price | Item Count");
         for (Map.Entry<E, Integer> entry: inventory.entrySet()){
             E item = entry.getKey();
             int count = entry.getValue();
             if(item instanceof Item){
-                System.out.println("<"+item.hashCode()+"> |"+((Item) item).getItemName()+" | "+ ((Item) item).getItemPrice()+" | "+ count);
+                System.out.println("\t|\t<"+((Item) item).getItemId()+"> |"+((Item) item).getItemName()+" | "+ ((Item) item).getItemPrice()+" | "+ count);
             }
         }
+        System.out.println("\t=============================================================");
     }
 
     public void printCoinInventory(){
-        System.out.println("SlNo. | Coin Name  | Coin Value | Coin Count");
+        System.out.println("\t=============================================================");
+        System.out.println("\t|\tSlNo. | Coin Name  | Coin Value | Coin Count");
         int i=1;
         for (Map.Entry<E, Integer> entry: inventory.entrySet()){
             E item = entry.getKey();
             int count = entry.getValue();
             if(item instanceof Coin){
-                System.out.println(i+". |"+((Coin) item).name()+" | "+ ((Coin) item).getValue()+" | "+ count);
+                System.out.println("\t|\t"+i+". |"+((Coin) item).name()+" | "+ ((Coin) item).getValue()+" | "+ count);
                 i++;
             }
         }
+        System.out.println("\t=============================================================");
     }
 
 
